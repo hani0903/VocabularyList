@@ -3,6 +3,7 @@ package com.metacoding.vocabularylist
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -19,13 +20,13 @@ class MainActivity : AppCompatActivity(), WordAdapter.ItemClickListener {
         setContentView(binding.root)
 
         initRecyclerView()
+
         binding.addButton.setOnClickListener {
-            Intent(this,AddActivity::class.java).let{
+            Intent(this, AddActivity::class.java).let {
                 startActivity(it)
             }
         }
     }
-
 
     private fun initRecyclerView() {
 
@@ -52,10 +53,22 @@ class MainActivity : AppCompatActivity(), WordAdapter.ItemClickListener {
                 DividerItemDecoration(applicationContext, LinearLayoutManager.VERTICAL)
             addItemDecoration(dividerItemDecoration)
         }
+
+        Thread {
+            //Database에서 data 갖고오기
+            //어댑터에 데이터를 넣어주기
+            val list = AppDatabase.getInstance(this)?.wordDao()?.getAll() ?: emptyList()
+            Log.d("listt","$list")
+            wordAdapter.list.addAll(list)
+
+            //어댑터에 데이터를 넣었음을 알리는 내용이 반드시 추가되어야 함
+            runOnUiThread {
+                wordAdapter.notifyDataSetChanged()
+            }
+        }.start()
     }
 
     override fun onClick(word: Word) {
         Toast.makeText(this, "${word.word}가 클릭됐습니다", Toast.LENGTH_SHORT)
-
     }
 }

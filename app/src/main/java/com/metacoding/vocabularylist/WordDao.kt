@@ -6,7 +6,7 @@ import androidx.room.*
 interface WordDao {
 
     //리스트를 갖고오기
-    @Query("SELECT * from word ORDER BY id DESC")
+    @Query("SELECT * FROM word ORDER BY id DESC")
     fun getAll(): List<Word>
 
     @Query("SELECT * from word ORDER BY id DESC LIMIT 1")

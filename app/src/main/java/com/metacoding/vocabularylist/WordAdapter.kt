@@ -11,7 +11,7 @@ import java.util.zip.Inflater
 
 class WordAdapter(
     //단어(Word) 배열
-    private val list: MutableList<Word>,
+    val list: MutableList<Word>,
     private val itemClickListener: ItemClickListener? = null,
 ) : RecyclerView.Adapter<WordAdapter.WordViewHolder>() {
 
