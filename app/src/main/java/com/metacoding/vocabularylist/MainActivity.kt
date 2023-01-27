@@ -14,6 +14,7 @@ class MainActivity : AppCompatActivity(), WordAdapter.ItemClickListener {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var wordAdapter: WordAdapter
+    private var selectedWord: Word? = null
 
     private val updateAddWordResult = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -37,6 +38,9 @@ class MainActivity : AppCompatActivity(), WordAdapter.ItemClickListener {
             Intent(this, AddActivity::class.java).let {
                 updateAddWordResult.launch(it)
             }
+        }
+        binding.deleteImageView.setOnClickListener {
+            delete()
         }
     }
 
@@ -92,7 +96,34 @@ class MainActivity : AppCompatActivity(), WordAdapter.ItemClickListener {
         }.start()
     }
 
+    private fun delete() {
+        if(selectedWord == null) return
+        Thread {
+
+            selectedWord?.let { word ->
+
+                AppDatabase.getInstance(this)?.wordDao()?.delete(word)
+
+                runOnUiThread {
+
+                    wordAdapter.list.remove(word)
+
+                    wordAdapter.notifyDataSetChanged()
+                    binding.wordTextView.text = ""
+                    binding.meanTextView.text = ""
+                    Toast.makeText(this,"삭제 되었습니다.",Toast.LENGTH_SHORT).show()
+                }
+            }
+        }.start()
+    }
+
     override fun onClick(word: Word) {
-        Toast.makeText(this, "${word.word}가 클릭됐습니다", Toast.LENGTH_SHORT)
+        //선택된 단어 담기
+        selectedWord = word
+
+        //UI 업데이트
+        binding.wordTextView.text = word.word
+        binding.meanTextView.text = word.mean
+
     }
 }
