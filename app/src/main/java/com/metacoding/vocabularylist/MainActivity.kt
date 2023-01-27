@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.metacoding.vocabularylist.databinding.ActivityMainBinding
@@ -14,6 +15,16 @@ class MainActivity : AppCompatActivity(), WordAdapter.ItemClickListener {
     private lateinit var binding: ActivityMainBinding
     private lateinit var wordAdapter: WordAdapter
 
+    private val updateAddWordResult = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    )
+    { result ->
+        val isUpdated = result.data?.getBooleanExtra("isUpdated", false)
+        if (result.resultCode == RESULT_OK && isUpdated == true) {
+            updateAddWord()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -22,8 +33,9 @@ class MainActivity : AppCompatActivity(), WordAdapter.ItemClickListener {
         initRecyclerView()
 
         binding.addButton.setOnClickListener {
+
             Intent(this, AddActivity::class.java).let {
-                startActivity(it)
+                updateAddWordResult.launch(it)
             }
         }
     }
@@ -58,12 +70,24 @@ class MainActivity : AppCompatActivity(), WordAdapter.ItemClickListener {
             //Database에서 data 갖고오기
             //어댑터에 데이터를 넣어주기
             val list = AppDatabase.getInstance(this)?.wordDao()?.getAll() ?: emptyList()
-            Log.d("listt","$list")
+            Log.d("listt", "$list")
             wordAdapter.list.addAll(list)
 
             //어댑터에 데이터를 넣었음을 알리는 내용이 반드시 추가되어야 함
             runOnUiThread {
                 wordAdapter.notifyDataSetChanged()
+            }
+        }.start()
+    }
+
+    private fun updateAddWord() {
+        Thread {
+            AppDatabase.getInstance(this)?.wordDao()?.getLatestWord()?.let { word ->
+                wordAdapter.list.add(0, word)
+
+                runOnUiThread {
+                    wordAdapter.notifyDataSetChanged()
+                }
             }
         }.start()
     }

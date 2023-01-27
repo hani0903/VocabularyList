@@ -1,5 +1,6 @@
 package com.metacoding.vocabularylist
 
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Toast
@@ -58,7 +59,7 @@ class AddActivity : AppCompatActivity() {
         val type = findViewById<Chip>(binding.typeChipGroup.checkedChipId).text.toString()
 
         //입력한 설정값을 모두 갖고 와서 새로운 단어를 만든다.
-        val word =  Word(text,mean,type)
+        val word = Word(text, mean, type)
 
         //데이터베이스에 단어 갖고 오기
         Thread {
@@ -66,9 +67,13 @@ class AddActivity : AppCompatActivity() {
 
             //toast는 화면에 UI를 그리는 것이므로 UIThread에서 해준다.
             runOnUiThread {
-                Toast.makeText(this,"저장을 완료했습니다.",Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "저장을 완료했습니다.", Toast.LENGTH_SHORT).show()
 
             }
+
+            val intent = Intent().putExtra("isUpdated",true)
+
+            setResult(RESULT_OK, intent)
             finish()
         }.start()
     }
