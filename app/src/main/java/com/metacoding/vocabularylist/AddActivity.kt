@@ -14,6 +14,7 @@ import kotlin.concurrent.thread
 class AddActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityAddBinding
+    private var originWord: Word? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -22,7 +23,8 @@ class AddActivity : AppCompatActivity() {
 
         initViews()
         binding.addButton.setOnClickListener {
-            add()
+
+            if (originWord == null) add() else edit()
         }
     }
 
@@ -35,6 +37,15 @@ class AddActivity : AppCompatActivity() {
             types.forEach { text ->
                 addView(createChip(text))
             }
+        }
+
+        originWord = intent.getParcelableExtra("originWord")
+        originWord?.let { word ->
+            binding.wordInputEditText.setText(word.word)
+            binding.meanInputEditText.setText(word.mean)
+            val selectedChip =
+                binding.typeChipGroup.children.firstOrNull { (it as Chip).text == word.type } as? Chip
+            selectedChip?.isCheckable = true
         }
     }
 
@@ -71,10 +82,39 @@ class AddActivity : AppCompatActivity() {
 
             }
 
-            val intent = Intent().putExtra("isUpdated",true)
+            val intent = Intent().putExtra("isUpdated", true)
 
             setResult(RESULT_OK, intent)
             finish()
+        }.start()
+    }
+
+    private fun edit() {
+        //단어, 뜻, 타입을 갖고 오기
+        val text = binding.wordInputEditText.text.toString()
+        val mean = binding.meanInputEditText.text.toString()
+
+        //selected 된 Chip 을 갖고 오기
+        val type = findViewById<Chip>(binding.typeChipGroup.checkedChipId).text.toString()
+
+        //입력한 설정값을 모두 갖고 와서 새로운 단어를 만든다.
+        val editWord = originWord?.copy(word = text, mean = mean, type = type)
+
+        //데이터베이스에 단어 갖고 오기
+        Thread {
+            editWord?.let { word ->
+                AppDatabase.getInstance(this)?.wordDao()?.update(word) ?: null
+                val intent = Intent().putExtra("editWord", editWord)
+                setResult(RESULT_OK, intent)
+
+                //toast는 화면에 UI를 그리는 것이므로 UIThread에서 해준다.
+                runOnUiThread {
+                    Toast.makeText(this, "수정을 완료했습니다.", Toast.LENGTH_SHORT).show()
+                }
+
+                finish()
+            }
+
         }.start()
     }
 }

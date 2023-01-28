@@ -26,6 +26,17 @@ class MainActivity : AppCompatActivity(), WordAdapter.ItemClickListener {
         }
     }
 
+    private val updateEditWordResult = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    )
+    { result ->
+
+        val editdWord = result.data?.getParcelableExtra<Word>("editWord")
+        if (result.resultCode == RESULT_OK && editdWord != null) {
+            updateEditWord(editdWord)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -41,6 +52,10 @@ class MainActivity : AppCompatActivity(), WordAdapter.ItemClickListener {
         }
         binding.deleteImageView.setOnClickListener {
             delete()
+        }
+
+        binding.editImageView.setOnClickListener {
+            edit()
         }
     }
 
@@ -96,8 +111,22 @@ class MainActivity : AppCompatActivity(), WordAdapter.ItemClickListener {
         }.start()
     }
 
+    private fun updateEditWord(word: Word) {
+        val index = wordAdapter.list.indexOfFirst { it.id == word.id }
+        wordAdapter.list[index] = word
+        runOnUiThread { wordAdapter.notifyItemChanged(index) }
+
+        runOnUiThread {
+
+            selectedWord = word
+            wordAdapter.notifyItemChanged(index)
+            binding.wordTextView.text = ""
+            binding.meanTextView.text = ""
+        }
+    }
+
     private fun delete() {
-        if(selectedWord == null) return
+        if (selectedWord == null) return
         Thread {
 
             selectedWord?.let { word ->
@@ -111,19 +140,26 @@ class MainActivity : AppCompatActivity(), WordAdapter.ItemClickListener {
                     wordAdapter.notifyDataSetChanged()
                     binding.wordTextView.text = ""
                     binding.meanTextView.text = ""
-                    Toast.makeText(this,"삭제 되었습니다.",Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "삭제 되었습니다.", Toast.LENGTH_SHORT).show()
                 }
             }
         }.start()
     }
 
+    private fun edit(){
+        if(selectedWord == null) return
+
+        val intent = Intent(this,AddActivity::class.java).putExtra("originWord",selectedWord)
+        updateEditWordResult.launch(intent)
+    }
+
     override fun onClick(word: Word) {
+
         //선택된 단어 담기
         selectedWord = word
 
         //UI 업데이트
         binding.wordTextView.text = word.word
         binding.meanTextView.text = word.mean
-
     }
 }
